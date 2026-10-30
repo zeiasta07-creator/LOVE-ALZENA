@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fireworks Love - Alzena</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #03000b;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+}
+
+canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+h1 {
+    color: white;
+    font-size: clamp(40px, 12vw, 75px);
+    letter-spacing: 7px;
+    text-shadow:
+        0 0 10px #ff4da6,
+        0 0 25px #ff0080,
+        0 0 50px #ff0080;
+    animation: glow 2s infinite alternate;
+}
+
+p {
+    color: #ffc5e1;
+    font-size: 16px;
+    letter-spacing: 3px;
+    margin-top: 15px;
+}
+
+@keyframes glow {
+    from { opacity: .6; }
+    to { opacity: 1; }
+}
+
+button {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 14px 30px;
+    border: 1px solid #ff69b4;
+    background: #ff1680;
+    color: white;
+    border-radius: 30px;
+    font-size: 15px;
+    box-shadow: 0 0 20px #ff1680;
+    z-index: 5;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fireworks"></canvas>
+
+<div class="content">
+    <h1>ALZENA ❤️</h1>
+    <p>YOU ARE MY BEAUTIFUL UNIVERSE</p>
+</div>
+
+<button onclick="launchLove()">LAUNCH LOVE ❤️</button>
+
+<script>
+const canvas = document.getElementById("fireworks");
+const ctx = canvas.getContext("2d");
+
+let W, H;
+let particles = [];
+let rockets = [];
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+class Rocket {
+    constructor(x, y, targetY, heart = false) {
+        this.x = x;
+        this.y = y;
+        this.targetY = targetY;
+        this.speed = 5;
+        this.heart = heart;
+        this.color = `hsl(${Math.random()*360},100%,65%)`;
+    }
+
+    update() {
+        this.y -= this.speed;
+
+        if (this.y <= this.targetY) {
+            explode(this.x, this.y, this.color, this.heart);
+            return false;
+        }
+
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 3, 7);
+        return true;
+    }
+}
+
+class Particle {
+    constructor(x, y, angle, speed, color, heart = false) {
+        this.x = x;
+        this.y = y;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 100;
+        this.color = color;
+        this.heart = heart;
+        this.size = Math.random() * 2 + 1;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.025;
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+        this.life -= 1.2;
+
+        ctx.globalAlpha = Math.max(0, this.life / 100);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        return this.life > 0;
+    }
+}
+
+function explode(x, y, color, heart) {
+    let count = heart ? 100 : 65;
+
+    for (let i = 0; i < count; i++) {
+        let angle, speed;
+
+        if (heart) {
+            // Membentuk pola hati
+            let t = Math.PI * 2 * i / count;
+            let hx = 16 * Math.pow(Math.sin(t), 3);
+            let hy = -(13 * Math.cos(t)
+                - 5 * Math.cos(2*t)
+                - 2 * Math.cos(3*t)
+                - Math.cos(4*t));
+
+            let scale = 0.22;
+            let vx = hx * scale;
+            let vy = hy * scale;
+
+            let p = new Particle(
+                x, y,
+                Math.atan2(vy, vx),
+                Math.sqrt(vx*vx + vy*vy),
+                color,
+                true
+            );
+
+            particles.push(p);
+        } else {
+            angle = Math.PI * 2 * Math.random();
+            speed = Math.random() * 4 + 1;
+
+            particles.push(
+                new Particle(x, y, angle, speed, color)
+            );
+        }
+    }
+}
+
+function launchLove() {
+    rockets.push(
+        new Rocket(
+            Math.random() * W,
+            H,
+            Math.random() * H * 0.4 + 80,
+            Math.random() > 0.3
+        )
+    );
+}
+
+function animate() {
+    ctx.fillStyle = "rgba(3,0,11,0.18)";
+    ctx.fillRect(0, 0, W, H);
+
+    rockets = rockets.filter(r => r.update());
+    particles = particles.filter(p => p.update());
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+// Kembang api otomatis
+setInterval(() => {
+    launchLove();
+}, 900);
+
+// Ledakan hati besar saat mulai
+setTimeout(() => {
+    rockets.push(new Rocket(W/2, H, H*0.3, true));
+}, 500);
+</script>
+
+</body>
+</html>
